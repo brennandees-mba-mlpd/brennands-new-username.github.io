@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>FlexBay — Industrial Value-Add Sensitivity Model</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F7FC; --panel:#FFFFFF; --ink:#1F2430; --muted:#6B7280; --line:#DCE5F2;
+    --purple:#1F3864; --purple2:#3E6DB5; --lav:#EEF3FB; --gold:#B8924A;
+    --pos:#2F7D5B; --neg:#B23A48; --grayline:#AEB8C9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 28px 64px}
+  header{background:linear-gradient(135deg,#16294A 0%,#1F3864 55%,#2E4F86 100%);color:#fff;
+    padding:34px 0 30px;margin-bottom:30px;border-bottom:3px solid var(--gold)}
+  .hd{max-width:1240px;margin:0 auto;padding:0 28px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+  .brand{font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:#CADCFC;font-weight:600}
+  h1{font-size:27px;font-weight:700;letter-spacing:-.01em;margin-top:6px}
+  .sub{color:#CDBBD8;font-size:14px;margin-top:7px;max-width:640px}
+  .tag{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#E7DCEd;border:1px solid rgba(255,255,255,.32);
+    border-radius:999px;padding:7px 14px;white-space:nowrap}
+  .grid{display:grid;grid-template-columns:370px 1fr;gap:26px;align-items:start}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 22px 6px;
+    box-shadow:0 1px 2px rgba(40,20,55,.04)}
+  .panel h2{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:4px}
+  .ph{display:flex;justify-content:space-between;align-items:center;margin:18px 0 16px}
+  .ph .note{font-size:12px;color:var(--muted)}
+  .grp{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;
+    margin:18px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .ctrl{margin-bottom:19px}
+  .crow{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+  .crow label{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .crow .val{font-size:15px;font-weight:700;color:var(--purple2);font-variant-numeric:tabular-nums}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:5px;
+    background:linear-gradient(90deg,var(--purple2) 0%,var(--purple2) var(--fill,40%),var(--lav) var(--fill,40%),var(--lav) 100%);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:3px solid var(--purple2);cursor:pointer;box-shadow:0 1px 3px rgba(31,56,100,.35)}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--purple2);cursor:pointer}
+  .mm{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px;font-variant-numeric:tabular-nums}
+  .reset{width:100%;margin:6px 0 18px;padding:11px;border:1px solid var(--purple);background:#fff;color:var(--purple);
+    font-weight:700;font-size:13px;letter-spacing:.04em;border-radius:9px;cursor:pointer;transition:.15s}
+  .reset:hover{background:var(--purple);color:#fff}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 17px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--purple2)}
+  .card .k{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .card .ksub{font-size:10px;color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+  .card .v{font-size:26px;font-weight:700;margin-top:8px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .card .d{font-size:12px;font-weight:600;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .d.up{color:var(--pos)} .d.dn{color:var(--neg)}
+  .section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:24px}
+  .section h3{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:3px}
+  .section .cap{font-size:12.5px;color:var(--muted);margin-bottom:18px}
+  .cmp{display:flex;flex-direction:column;gap:15px}
+  .cmprow .cl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .cmprow .cl .nm{font-weight:600}
+  .cmprow .cl .vs{color:var(--muted);font-variant-numeric:tabular-nums}
+  .cmprow .vs b{color:var(--purple2)}
+  .info{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;
+    border:1px solid var(--muted);color:var(--muted);font-size:9.5px;font-weight:700;font-style:italic;
+    cursor:pointer;margin-left:7px;line-height:1;vertical-align:middle;user-select:none}
+  .info:hover{border-color:var(--purple2);color:var(--purple2);background:var(--lav)}
+  .expl{display:none;margin-top:9px;font-size:12px;color:var(--muted);background:var(--bg);
+    border:1px solid var(--line);border-left:3px solid var(--purple2);border-radius:7px;padding:9px 12px;line-height:1.55}
+  .expl.open{display:block}
+  .track{position:relative;height:22px;background:var(--bg);border-radius:6px;border:1px solid var(--line)}
+  .bar{position:absolute;top:0;bottom:0;border-radius:5px}
+  .bar.base{background:repeating-linear-gradient(45deg,var(--grayline),var(--grayline) 6px,#cabfd6 6px,#cabfd6 12px);opacity:.7;height:9px;top:2px}
+  .bar.cur{background:linear-gradient(90deg,var(--purple) 0%,var(--purple2) 100%);height:9px;bottom:2px}
+  .legend{display:flex;gap:20px;font-size:11.5px;color:var(--muted);margin-bottom:14px;align-items:center}
+  .swatch{display:inline-block;width:22px;height:8px;border-radius:3px;vertical-align:middle;margin-right:7px}
+  .chartbox{position:relative;height:340px}
+  footer{margin-top:30px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.7}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}.hd{flex-direction:column;align-items:flex-start}}
+  @media(max-width:560px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <div>
+      <div class="logo" style="margin-bottom:9px" aria-label="FlexBay">
+        <svg viewBox="0 0 470 120" height="46" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FlexBay logo">
+          <g transform="translate(6,10)">
+            <rect x="14" y="20" width="72" height="60" rx="7" fill="#FFFFFF"/>
+            <rect x="20" y="26" width="24" height="48" rx="2.5" fill="#1F3864"/>
+            <rect x="48" y="26" width="32" height="22" rx="2.5" fill="#3E6DB5"/>
+            <rect x="48" y="54" width="15" height="20" rx="2.5" fill="#1F3864"/>
+            <rect x="67" y="54" width="13" height="20" rx="2.5" fill="#3E6DB5"/>
+          </g>
+          <text x="128" y="82" font-family="Arial,Helvetica,sans-serif" font-size="62" font-weight="800" letter-spacing="-1.5" fill="#FFFFFF">Flex<tspan fill="#CADCFC">Bay</tspan></text>
+        </svg>
+      </div>
+      <div class="brand">Industrial Value-Add</div>
+      <h1>Interactive Sensitivity Model</h1>
+      <div class="sub">A live, ten-year levered pro forma for a Dallas–Fort Worth small-bay portfolio. Adjust the deal drivers to test how returns respond against the underwritten base case.</div>
+    </div>
+    <div class="tag">Prepared for MGMT 637 FlexBay Presentation</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- INPUTS -->
+    <div class="panel">
+      <div class="ph"><h2>Model Inputs</h2><span class="note">Base case in ( )</span></div>
+      <div class="grp">Deal Drivers</div>
+      <div class="ctrl" data-c></div>
+      <div class="grp">Capital &amp; Exit</div>
+      <div class="ctrl" data-c2></div>
+      <button class="reset" id="reset">Reset to Base Case</button>
+    </div>
+
+    <!-- OUTPUTS -->
+    <div>
+      <div class="section">
+        <h3>Outputs · Current vs. Base Case</h3>
+        <div class="cap">Solid bar = current scenario · Hatched bar = underwritten base case. Tap the &ldquo;i&rdquo; on any metric to see what drives it.</div>
+        <div class="cmp" id="cmp"></div>
+      </div>
+
+      <div class="section">
+        <h3>Levered Cash Flow Over the Hold</h3>
+        <div class="cap">Annual net cash flow to the project (pre-tax, levered), excluding the year-10 sale.</div>
+        <div class="legend">
+          <span><span class="swatch" style="background:#1F3864"></span>Current scenario</span>
+          <span><span class="swatch" style="background:#BCB2C8"></span>Base case</span>
+        </div>
+        <div class="chartbox"><canvas id="cf"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <footer>
+    Illustrative model prepared for academic and review purposes; not investment advice or an offer of securities.<br/>
+    Figures mirror the underwritten FlexBay pro forma (six-building, ~1.25M SF portfolio, 10-year hold). NPV is computed on levered equity cash flows at the selected cost of capital.
+  </footer>
+</div>
+
+<script>
+const B=[{sf:175000,acq:1,rate:0.0675},{sf:175000,acq:25,rate:0.0675},{sf:150000,acq:37,rate:0.06},
+         {sf:250000,acq:49,rate:0.06},{sf:250000,acq:61,rate:0.0575},{sf:250000,acq:73,rate:0.0575}];
+const FIX={ramp:36,starter:0.05,starterDisc:0.30,other:0.15,opexPSF:3.50,recovery:0.95,mgmt:0.03,
+  ga1:300000,gaPer:75000,mktBase:20000,mktPer:10000,comm:0.05,reserve:0.15,selling:0.025,hold:10};
+
+function model(p){
+  const totalSF=B.reduce((s,b)=>s+b.sf,0);
+  const cost=b=>b.sf*p.allinPSF, debt=b=>p.debtPct*cost(b), eq=b=>cost(b)-debt(b);
+  const totDebt=B.reduce((s,b)=>s+debt(b),0), totEq=B.reduce((s,b)=>s+eq(b),0), totCost=B.reduce((s,b)=>s+cost(b),0);
+  const occ=k=> k<1?0:Math.min(p.stab,p.stab*k/FIX.ramp);
+  let eqcf=[],annual=new Array(10).fill(0),prevOcc=0;
+  for(let m=1;m<=120;m++){
+    const yi=Math.ceil(m/12); const rpm=p.rent*Math.pow(1+p.esc,yi-1)/12;
+    let ownedSF=0,occSF=0,rev=0;
+    for(const b of B){ if(b.acq<=m){ ownedSF+=b.sf; const osf=b.sf*occ(m-b.acq+1); occSF+=osf;
+      rev+=osf*(rpm*(1-p.starter*p.starterDisc)+(yi>=3?p.other/12:0)); } }
+    const occPct=ownedSF>0?occSF/ownedSF:0;
+    const opex=p.opexPSF/12*ownedSF*(1-p.recovery*occPct), mgmt=p.mgmt*rev, noi=rev-opex-mgmt;
+    let bo=0,bl=0; for(const b of B){ if(b.acq<=m)bo++; const k=m-b.acq+1; if(k>=1&&k<=FIX.ramp)bl++; }
+    const ga=(p.ga1+p.gaPer*Math.max(0,bo-1))/12, mkt=(p.mktBase+p.mktPer*bl)/12;
+    const leasing=(m===1?p.comm*occSF*(rpm*12):p.comm*Math.max(0,occSF-prevOcc)*(rpm*12));
+    const res=p.reserve/12*ownedSF, opProfit=noi-ga-mkt-leasing-res;
+    let interest=0; for(const b of B){ if(b.acq<=m) interest+=debt(b)*b.rate/12; }
+    const ncf=opProfit-interest; annual[yi-1]+=ncf;
+    let ei=0; for(const b of B){ if(b.acq===m) ei-=eq(b); } eqcf.push(ei+ncf); prevOcc=occSF;
+  }
+  // stabilized exit (year-10 rent)
+  const rentH=p.rent*Math.pow(1+p.esc,FIX.hold-1);
+  const sRev=totalSF*p.stab*rentH*(1-p.starter*p.starterDisc)+totalSF*p.stab*p.other;
+  const stabNOI=sRev-p.opexPSF*totalSF*(1-p.recovery*p.stab)-p.mgmt*sRev;
+  const netExit=(stabNOI/p.exitCap)*(1-p.selling)-totDebt; eqcf[119]+=netExit;
+  // going-in YOC (today's rent)
+  const gRev=totalSF*p.stab*p.rent*(1-p.starter*p.starterDisc)+totalSF*p.stab*p.other;
+  const goingNOI=gRev-p.opexPSF*totalSF*(1-p.recovery*p.stab)-p.mgmt*gRev;
+  const yoc=goingNOI/totCost;
+  const npvAt=r=>eqcf.reduce((s,c,i)=>s+c/Math.pow(1+r,i+1),0);
+  let lo=-0.6,hi=0.6; for(let i=0;i<160;i++){const md=(lo+hi)/2; if(npvAt(md)>0)lo=md;else hi=md;}
+  const irr=Math.pow(1+(lo+hi)/2,12)-1;
+  const mult=eqcf.reduce((s,c)=>s+(c>0?c:0),0)/totEq;
+  const npv=eqcf.reduce((s,c,i)=>s+c/Math.pow(1+p.coc,(i+1)/12),0);
+  return {irr,mult,npv,stabNOI,netExit,yoc,totEq,totCost,annual};
+}
+
+const DEF={allinPSF:(95+22)*1.0275,rent:10.25,stab:0.90,esc:0.03,debtPct:0.65,exitCap:0.065,coc:0.10};
+const CTRLS=[
+  {k:'allinPSF',g:1,label:'All-in cost / SF',min:90,max:160,step:0.5,fmt:v=>'$'+v.toFixed(0),base:DEF.allinPSF},
+  {k:'rent',g:1,label:'Blended base rent / SF',min:8.5,max:12.5,step:0.05,fmt:v=>'$'+v.toFixed(2),base:DEF.rent},
+  {k:'stab',g:1,label:'Stabilized occupancy',min:0.70,max:0.95,step:0.005,fmt:v=>(v*100).toFixed(0)+'%',base:DEF.stab},
+  {k:'esc',g:1,label:'Annual rent escalation',min:0,max:0.06,step:0.0025,fmt:v=>(v*100).toFixed(1)+'%',base:DEF.esc},
+  {k:'debtPct',g:2,label:'Senior debt (LTC)',min:0.40,max:0.80,step:0.01,fmt:v=>(v*100).toFixed(0)+'% / '+((1-v)*100).toFixed(0)+'% eq',base:DEF.debtPct},
+  {k:'exitCap',g:2,label:'Exit cap rate',min:0.05,max:0.08,step:0.00125,fmt:v=>(v*100).toFixed(2)+'%',base:DEF.exitCap},
+  {k:'coc',g:2,label:'Cost of capital (NPV discount)',min:0.06,max:0.15,step:0.0025,fmt:v=>(v*100).toFixed(1)+'%',base:DEF.coc},
+];
+const state={...DEF};
+const M=v=>(v<0?'-$':'$')+Math.abs(v/1e6).toFixed(1)+'M';
+const pct1=v=>(v*100).toFixed(1)+'%';
+const CMP=[
+  {k:'irr',nm:'Levered IRR',max:0.25,fmt:pct1,
+   drivers:'Driven by all the inputs together. It rises with a lower all-in cost, higher rent, higher occupancy, faster rent escalation, and a lower exit cap rate, and modestly with more leverage. Because it is time-weighted, anything that speeds up or deepens cash flow moves it the most.'},
+  {k:'mult',nm:'Equity Multiple',max:4,fmt:v=>v.toFixed(2)+'x',
+   drivers:'Total cash returned divided by equity invested. Higher rent, occupancy, and a lower exit cap raise proceeds; more debt shrinks the equity base and lifts the multiple; a higher acquisition cost lowers it.'},
+  {k:'npv',nm:'NPV (equity)',max:30e6,fmt:M,
+   drivers:'Present value of the levered equity cash flows. It improves with the same drivers as IRR (lower cost, higher rent and occupancy, lower exit cap) and falls as the cost-of-capital discount rate rises.'},
+  {k:'stabNOI',nm:'Stabilized NOI',max:20e6,fmt:M,
+   drivers:'Set by rent, occupancy, and rent escalation on a year-10 basis, net of operating expenses. It does not depend on how the deal is financed or on the acquisition cost.'},
+  {k:'netExit',nm:'Net Exit Proceeds',max:200e6,fmt:M,
+   drivers:'Stabilized NOI divided by the exit cap rate, less selling costs and the debt repaid. A lower exit cap and higher NOI raise it; more debt reduces the net proceeds at sale.'},
+  {k:'yoc',nm:'Yield-on-Cost (going-in)',max:0.12,fmt:pct1,
+   drivers:'Going-in stabilized NOI divided by all-in cost. It rises with higher rent and occupancy and falls with a higher acquisition cost. Compare it to the ~6.1% cost of debt to judge whether leverage is working for you.'},
+  {k:'totEq',nm:'Total Equity Required',max:130e6,fmt:M,
+   drivers:'All-in cost multiplied by the equity share. It increases with a higher cost basis and a lower debt percentage, and is unaffected by rent, occupancy, or exit assumptions.'},
+];
+
+const BASE=model({...DEF,...FIX});
+let chart;
+
+function buildControls(){
+  [1,2].forEach(g=>{
+    const host=document.querySelector(g===1?'[data-c]':'[data-c2]'); host.innerHTML='';
+    CTRLS.filter(c=>c.g===g).forEach(c=>{
+      const d=document.createElement('div'); d.className='ctrl';
+      d.innerHTML=`<div class="crow"><label>${c.label}</label><span class="val" id="v_${c.k}"></span></div>
+        <input type="range" id="i_${c.k}" min="${c.min}" max="${c.max}" step="${c.step}">
+        <div class="mm"><span>${c.fmt(c.min)}</span><span>base ${c.fmt(c.base)}</span><span>${c.fmt(c.max)}</span></div>`;
+      host.appendChild(d);
+      const inp=d.querySelector('input');
+      inp.value=state[c.k];
+      inp.addEventListener('input',()=>{state[c.k]=parseFloat(inp.value);render();});
+    });
+  });
+}
+function setFill(c){
+  const inp=document.getElementById('i_'+c.k); const pct=(state[c.k]-c.min)/(c.max-c.min)*100;
+  inp.style.setProperty('--fill',pct+'%'); document.getElementById('v_'+c.k).textContent=c.fmt(state[c.k]);
+}
+function render(){
+  CTRLS.forEach(setFill);
+  const r=model({...state,...FIX});
+  // outputs as base-vs-current bars, each with a click-to-reveal driver note
+  const cmp=document.getElementById('cmp'); cmp.innerHTML='';
+  CMP.forEach((c,idx)=>{
+    const cur=r[c.k], base=BASE[c.k];
+    const wc=Math.max(0,Math.min(100,cur/c.max*100)), wb=Math.max(0,Math.min(100,base/c.max*100));
+    const row=document.createElement('div'); row.className='cmprow';
+    row.innerHTML=`<div class="cl"><span class="nm">${c.nm}<span class="info" data-x="${idx}" title="What drives this?">i</span></span>
+        <span class="vs">base ${c.fmt(base)} &nbsp;·&nbsp; <b>current ${c.fmt(cur)}</b></span></div>
+      <div class="track"><div class="bar base" style="width:${wb}%"></div><div class="bar cur" style="width:${wc}%"></div></div>
+      <div class="expl" id="x_${idx}">${c.drivers}</div>`;
+    cmp.appendChild(row);
+  });
+  cmp.querySelectorAll('.info').forEach(b=>b.addEventListener('click',()=>{
+    document.getElementById('x_'+b.dataset.x).classList.toggle('open');
+  }));
+  // chart
+  const labels=Array.from({length:10},(_,i)=>'Y'+(i+1));
+  const curM=r.annual.map(v=>v/1e6), baseM=BASE.annual.map(v=>v/1e6);
+  if(!chart){
+    chart=new Chart(document.getElementById('cf'),{type:'line',
+      data:{labels,datasets:[
+        {label:'Current',data:curM,borderColor:'#1F3864',backgroundColor:'rgba(31,56,100,.10)',fill:true,tension:.3,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#1F3864'},
+        {label:'Base case',data:baseM,borderColor:'#BCB2C8',borderDash:[6,5],fill:false,tension:.3,borderWidth:2,pointRadius:0}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': $'+c.parsed.y.toFixed(2)+'M'}}},
+        scales:{y:{ticks:{callback:v=>'$'+v+'M',color:'#857B92'},grid:{color:'#EFEAF3'},title:{display:true,text:'Net cash flow ($M)',color:'#857B92'}},
+          x:{ticks:{color:'#857B92'},grid:{display:false}}}}});
+  } else { chart.data.datasets[0].data=curM; chart.data.datasets[1].data=baseM; chart.update(); }
+}
+document.getElementById('reset').addEventListener('click',()=>{Object.assign(state,DEF);
+  CTRLS.forEach(c=>document.getElementById('i_'+c.k).value=state[c.k]);render();});
+buildControls(); render();
+</script>
+</body>
+</html>
